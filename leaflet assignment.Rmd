@@ -1,0 +1,53 @@
+---
+title: "Leaflet example"
+author: "Erik Altink"
+date: "28-5-2017"
+output: html_document
+---
+
+# Assignment
+
+This HTML page is my submission for the "R Markdown and Leaflet" assignment.
+
+```{r setup, include = FALSE, echo = FALSE}
+library(leaflet)
+library(dplyr)
+library(tidyr)
+```
+
+Download or load Traffic Camera Data
+
+```{r, echo = FALSE, include = FALSE}
+# Get camera data
+if (!file.exists("data")) {
+  dir.create("data")
+}
+
+fileUrl <- "https://data.baltimorecity.gov/api/views/dz54-2aru/rows.csv?accessType=DOWNLOAD"
+download.file(fileUrl, destfile = "./data/cameras.csv", method = "curl")
+list.files("./data")
+
+dateDownloaded <- date()
+cameraData <- read.csv("./data/cameras.csv")
+
+df <- data.frame(cameraData)
+# df <- separate(df, "Location.1", into = c("lat", "long"), sep = ',')
+df <- extract(df, col = 'Location.1', into = c("latitude", "longitude"), "\\(([^,]+), ([^)]+)\\)")
+df$longitude <- as.numeric(df$longitude)
+df$latitude <- as.numeric(df$latitude)
+
+# create icon
+camIcon <- makeIcon(
+  iconUrl = "http://townofpalmbeach.com/images/pages/N560/Security_Camera-512.png",
+  iconWidth = 31*215/230, iconHeight = 31,
+  iconAnchorX = 31*215/230/2, iconAnchorY = 16
+)
+```
+
+Show Traffic Cams on Baltimore Map
+
+```{r, echo = FALSE}
+df %>% leaflet() %>%
+  addTiles() %>%
+  addMarkers(clusterOptions = markerClusterOptions(), icon = camIcon, popup = df$address)
+```
